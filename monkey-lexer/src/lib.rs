@@ -1,5 +1,3 @@
-use std::{iter::Peekable, str::Chars};
-
 const ASSIGN: char = '=';
 const PLUS: char = '+';
 const MINUS: char = '-';
@@ -64,98 +62,99 @@ pub enum Token {
     False,
 }
 
-pub struct Lexer<'lexer> {
-    input: Peekable<Chars<'lexer>>,
-}
+pub struct Lexer {}
 
-impl<'lexer> Lexer<'lexer> {
-    pub fn new(input: &'lexer str) -> Self {
-        let input = input.chars().into_iter().peekable();
-        Lexer { input }
+impl Lexer {
+    pub fn new() -> Self {
+        Lexer {}
     }
 
-    fn read_until(&mut self, c: char, func: impl Fn(&char) -> bool) -> String {
-        let mut output = vec![c];
+    pub fn parse(&self, input: &str) -> Vec<Token> {
+        let mut tokens: Vec<Token> = Vec::new();
 
-        while let Some(c) = self.input.next_if(&func) {
-            output.push(c);
+        let mut iter = input.chars().into_iter().peekable();
+
+        loop {
+            let token = match iter.next() {
+                Some(ASSIGN) => {
+                    if let Some(p) = iter.peek() {
+                        if p == &ASSIGN {
+                            iter.next();
+                            Token::Equals
+                        } else {
+                            Token::Assign
+                        }
+                    } else {
+                        Token::Illegal
+                    }
+                }
+                Some(PLUS) => Token::Plus,
+                Some(MINUS) => Token::Minus,
+                Some(BANG) => {
+                    if let Some(p) = iter.peek() {
+                        if p == &ASSIGN {
+                            iter.next();
+                            Token::NotEquals
+                        } else {
+                            Token::Bang
+                        }
+                    } else {
+                        Token::Illegal
+                    }
+                }
+                Some(SLASH) => Token::Slash,
+                Some(ASTERISK) => Token::Asterisk,
+                Some(LESS_THAN) => Token::LessThan,
+                Some(GREATER_THAN) => Token::GreatherThan,
+
+                Some(LEFT_PARENTHESIS) => Token::LeftParenthesis,
+                Some(RIGHT_PARENTHESIS) => Token::RightParenthesis,
+                Some(LEFT_BRACE) => Token::LeftBrace,
+                Some(RIGHT_BRACE) => Token::RightBrace,
+                Some(COMMA) => Token::Comma,
+                Some(SEMICOLON) => Token::Semicolon,
+                Some(c) if c.is_digit(10) => {
+                    let mut output = vec![c];
+
+                    while let Some(c) = iter.next_if(|c| c.is_digit(10)) {
+                        output.push(c);
+                    }
+
+                    let str = String::from_iter(output);
+
+                    Token::Integer(str.parse::<usize>().unwrap())
+                }
+                Some(c) if c.is_ascii_alphabetic() => {
+                    let mut output = vec![c];
+
+                    while let Some(c) = iter.next_if(|c| c.is_ascii_alphabetic()) {
+                        output.push(c);
+                    }
+
+                    let str = String::from_iter(output);
+
+                    match str.as_str() {
+                        LET => Token::Let,
+                        FUNCTION => Token::Function,
+                        TRUE => Token::True,
+                        FALSE => Token::False,
+                        IF => Token::If,
+                        ELSE => Token::Else,
+                        RETURN => Token::Return,
+                        _ => Token::Identifier(str),
+                    }
+                }
+                Some(c) if c.is_whitespace() => continue,
+                Some(_) => Token::Illegal,
+                None => {
+                    break;
+                }
+            };
+
+            tokens.push(token);
         }
 
-        String::from_iter(output)
-    }
-}
-
-impl<'lexer> Iterator for Lexer<'lexer> {
-    type Item = Token;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let keyword = self.input.next();
-
-        match keyword {
-            Some(ASSIGN) => {
-
-                if let Some(p) = self.input.peek() {
-                    
-                    if p == &ASSIGN {
-                        self.input.next();
-                        return Some(Token::Equals);
-                    }
-                    
-                    return Some(Token::Assign);
-                }
-
-                Some(Token::Illegal)
-            },
-            Some(PLUS) => Some(Token::Plus),
-            Some(MINUS) => Some(Token::Minus),
-            Some(BANG) => {
-
-                if let Some(p) = self.input.peek() {
-                    
-                    if p == &ASSIGN {
-                        self.input.next();
-                        return Some(Token::NotEquals);
-                    }
-                    
-                    return Some(Token::Bang);
-                }
-
-                Some(Token::Illegal)
-            } ,
-            Some(SLASH) => Some(Token::Slash),
-            Some(ASTERISK) => Some(Token::Asterisk),
-            Some(LESS_THAN) => Some(Token::LessThan),
-            Some(GREATER_THAN) => Some(Token::GreatherThan),
-
-            Some(LEFT_PARENTHESIS) => Some(Token::LeftParenthesis),
-            Some(RIGHT_PARENTHESIS) => Some(Token::RightParenthesis),
-            Some(LEFT_BRACE) => Some(Token::LeftBrace),
-            Some(RIGHT_BRACE) => Some(Token::RightBrace),
-            Some(COMMA) => Some(Token::Comma),
-            Some(SEMICOLON) => Some(Token::Semicolon),
-            Some(c) if c.is_digit(10) => {
-                let str = self.read_until(c, |c| c.is_digit(10));
-
-                Some(Token::Integer(str.parse::<usize>().unwrap()))
-            }
-            Some(c) if c.is_ascii_alphabetic() => {
-                let str = self.read_until(c, |c| c.is_ascii_alphabetic());
-
-                match str.as_str() {
-                    LET => Some(Token::Let),
-                    FUNCTION => Some(Token::Function),
-                    TRUE => Some(Token::True),
-                    FALSE => Some(Token::False),
-                    IF => Some(Token::If),
-                    ELSE => Some(Token::Else),
-                    RETURN => Some(Token::Return),
-                    _ => Some(Token::Identifier(str)),
-                }
-            }
-            Some(c) if c.is_whitespace() => self.next(),
-            Some(_) => Some(Token::Illegal),
-            None => None,
-        }
+        tokens
     }
 }
 
@@ -168,7 +167,7 @@ mod tests {
     #[test]
     fn delimiters() {
         let input = "=+(){},;";
-        let lexer = Lexer::new(input);
+        let lexer = Lexer::new();
 
         let expected_tokens = vec![
             Token::Assign,
@@ -181,7 +180,7 @@ mod tests {
             Token::Semicolon,
         ];
 
-        let tokens = lexer.into_iter().collect::<Vec<Token>>();
+        let tokens = lexer.parse(input);
 
         assert_eq!(expected_tokens, tokens);
     }
@@ -198,7 +197,7 @@ mod tests {
         let result = add(five, ten);
         ";
 
-        let lexer = Lexer::new(input);
+        let lexer = Lexer::new();
 
         let expected_tokens = vec![
             Token::Let,
@@ -239,7 +238,7 @@ mod tests {
             Token::Semicolon,
         ];
 
-        let tokens = lexer.into_iter().collect::<Vec<Token>>();
+        let tokens = lexer.parse(input);
 
         assert_eq!(expected_tokens, tokens);
     }
@@ -270,7 +269,7 @@ mod tests {
         10 != 9;
         ";
 
-        let lexer = Lexer::new(input);
+        let lexer = Lexer::new();
 
         let expected_tokens = vec![
             Token::Let,
@@ -278,13 +277,11 @@ mod tests {
             Token::Assign,
             Token::Integer(5),
             Token::Semicolon,
-
             Token::Let,
             Token::Identifier(String::from("ten")),
             Token::Assign,
             Token::Integer(10),
             Token::Semicolon,
-
             Token::Let,
             Token::Identifier(String::from("add")),
             Token::Assign,
@@ -311,21 +308,18 @@ mod tests {
             Token::Identifier(String::from("ten")),
             Token::RightParenthesis,
             Token::Semicolon,
-
             Token::Bang,
             Token::Minus,
             Token::Slash,
             Token::Asterisk,
             Token::Integer(5),
             Token::Semicolon,
-
             Token::Integer(5),
             Token::LessThan,
             Token::Integer(10),
             Token::GreatherThan,
             Token::Integer(5),
             Token::Semicolon,
-
             Token::If,
             Token::LeftParenthesis,
             Token::Integer(5),
@@ -343,21 +337,18 @@ mod tests {
             Token::False,
             Token::Semicolon,
             Token::RightBrace,
-
             Token::Integer(10),
             Token::Equals,
             Token::Integer(10),
             Token::Semicolon,
-
             Token::Integer(10),
             Token::NotEquals,
             Token::Integer(9),
             Token::Semicolon,
         ];
 
-        let tokens = lexer.into_iter().collect::<Vec<Token>>();
+        let tokens = lexer.parse(input);
 
         assert_eq!(expected_tokens, tokens);
     }
-
 }

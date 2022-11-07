@@ -2,5 +2,6 @@
 
 members = [
     "monkey",
-    "monkey-lexer"
+    "monkey-lexer",
+    "monkey-repl",
 ]
