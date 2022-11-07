@@ -74,9 +74,9 @@ impl Lexer {
 
         let mut iter = input.chars().into_iter().peekable();
 
-        loop {
-            let token = match iter.next() {
-                Some(ASSIGN) => {
+        while let Some(c) = iter.next() {
+            let token = match c {
+                ASSIGN => {
                     if let Some(p) = iter.peek() {
                         if p == &ASSIGN {
                             iter.next();
@@ -88,9 +88,9 @@ impl Lexer {
                         Token::Illegal
                     }
                 }
-                Some(PLUS) => Token::Plus,
-                Some(MINUS) => Token::Minus,
-                Some(BANG) => {
+                PLUS => Token::Plus,
+                MINUS => Token::Minus,
+                BANG => {
                     if let Some(p) = iter.peek() {
                         if p == &ASSIGN {
                             iter.next();
@@ -102,18 +102,18 @@ impl Lexer {
                         Token::Illegal
                     }
                 }
-                Some(SLASH) => Token::Slash,
-                Some(ASTERISK) => Token::Asterisk,
-                Some(LESS_THAN) => Token::LessThan,
-                Some(GREATER_THAN) => Token::GreatherThan,
+                SLASH => Token::Slash,
+                ASTERISK => Token::Asterisk,
+                LESS_THAN => Token::LessThan,
+                GREATER_THAN => Token::GreatherThan,
 
-                Some(LEFT_PARENTHESIS) => Token::LeftParenthesis,
-                Some(RIGHT_PARENTHESIS) => Token::RightParenthesis,
-                Some(LEFT_BRACE) => Token::LeftBrace,
-                Some(RIGHT_BRACE) => Token::RightBrace,
-                Some(COMMA) => Token::Comma,
-                Some(SEMICOLON) => Token::Semicolon,
-                Some(c) if c.is_digit(10) => {
+                LEFT_PARENTHESIS => Token::LeftParenthesis,
+                RIGHT_PARENTHESIS => Token::RightParenthesis,
+                LEFT_BRACE => Token::LeftBrace,
+                RIGHT_BRACE => Token::RightBrace,
+                COMMA => Token::Comma,
+                SEMICOLON => Token::Semicolon,
+                c if c.is_digit(10) => {
                     let mut output = vec![c];
 
                     while let Some(c) = iter.next_if(|c| c.is_digit(10)) {
@@ -124,7 +124,7 @@ impl Lexer {
 
                     Token::Integer(str.parse::<usize>().unwrap())
                 }
-                Some(c) if c.is_ascii_alphabetic() => {
+                c if c.is_ascii_alphabetic() => {
                     let mut output = vec![c];
 
                     while let Some(c) = iter.next_if(|c| c.is_ascii_alphabetic()) {
@@ -144,11 +144,8 @@ impl Lexer {
                         _ => Token::Identifier(str),
                     }
                 }
-                Some(c) if c.is_whitespace() => continue,
-                Some(_) => Token::Illegal,
-                None => {
-                    break;
-                }
+                c if c.is_whitespace() => continue,
+                _ => Token::Illegal,
             };
 
             tokens.push(token);
