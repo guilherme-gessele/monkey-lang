@@ -133,16 +133,7 @@ impl Lexer {
 
                     let str = String::from_iter(output);
 
-                    match str.as_str() {
-                        LET => Token::Let,
-                        FUNCTION => Token::Function,
-                        TRUE => Token::True,
-                        FALSE => Token::False,
-                        IF => Token::If,
-                        ELSE => Token::Else,
-                        RETURN => Token::Return,
-                        _ => Token::Identifier(str),
-                    }
+                    Self::match_keyword(&str)
                 }
                 c if c.is_whitespace() => continue,
                 _ => Token::Illegal,
@@ -152,6 +143,19 @@ impl Lexer {
         }
 
         tokens
+    }
+
+    fn match_keyword(keyword: &str) -> Token {
+        match keyword {
+            LET => Token::Let,
+            FUNCTION => Token::Function,
+            TRUE => Token::True,
+            FALSE => Token::False,
+            IF => Token::If,
+            ELSE => Token::Else,
+            RETURN => Token::Return,
+            _ => Token::Identifier(String::from(keyword)),
+        }
     }
 }
 

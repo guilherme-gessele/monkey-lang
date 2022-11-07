@@ -1,14 +1,12 @@
-use std::io::{stdin, stdout, Write, BufRead};
+use std::io::{stdin, stdout, BufRead, Write};
 
 use monkey_repl::Repl;
 
 fn main() {
-
     const PROMPT: &str = ">>";
     let repl = Repl::new();
 
     loop {
-
         print!("{PROMPT} ");
 
         let _ = stdout().flush();
@@ -16,6 +14,6 @@ fn main() {
         if let Some(Ok(ref line)) = stdin().lock().lines().next() {
             let result = repl.evaluate(line);
             println!("{:?}", result);
-        }      
+        }
     }
 }
